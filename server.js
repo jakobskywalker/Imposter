@@ -50,10 +50,14 @@ const playerSockets = new Map();
 
 // Word list for the game
 const wordList = [
-  'Pizza', 'Beach', 'Guitar', 'Rainbow', 'Elephant', 'Chocolate', 'Bicycle', 'Sunset',
-  'Mountain', 'Coffee', 'Dragon', 'Garden', 'Castle', 'Ocean', 'Forest', 'Thunder',
-  'Butterfly', 'Camera', 'Diamond', 'Rocket', 'Waterfall', 'Telescope', 'Universe',
-  'Volcano', 'Lighthouse', 'Compass', 'Phoenix', 'Pyramid', 'Treasure', 'Galaxy'
+  'Pizza', 'Strand', 'Gitarre', 'Regenbogen', 'Elefant', 'Schokolade', 'Fahrrad', 'Sonnenuntergang',
+  'Berg', 'Kaffee', 'Drache', 'Garten', 'Schloss', 'Ozean', 'Wald', 'Gewitter',
+  'Schmetterling', 'Kamera', 'Diamant', 'Rakete', 'Wasserfall', 'Teleskop', 'Universum',
+  'Vulkan', 'Leuchtturm', 'Kompass', 'Phönix', 'Pyramide', 'Schatz', 'Galaxie',
+  'Katze', 'Hund', 'Auto', 'Flugzeug', 'Buch', 'Computer', 'Handy', 'Fernseher',
+  'Küche', 'Badezimmer', 'Schule', 'Krankenhaus', 'Supermarkt', 'Restaurant', 'Kino', 'Theater',
+  'Fußball', 'Basketball', 'Tennis', 'Schwimmen', 'Tanzen', 'Singen', 'Malen', 'Kochen',
+  'Sommer', 'Winter', 'Frühling', 'Herbst', 'Regen', 'Schnee', 'Sonne', 'Wolke'
 ];
 
 class Game {
@@ -158,12 +162,12 @@ io.on('connection', (socket) => {
     const game = games.get(roomCode);
     
     if (!game) {
-      socket.emit('error', { message: 'Room not found' });
+      socket.emit('error', { message: 'Raum nicht gefunden' });
       return;
     }
     
     if (game.started) {
-      socket.emit('error', { message: 'Game already in progress' });
+      socket.emit('error', { message: 'Spiel läuft bereits' });
       return;
     }
     
@@ -177,6 +181,7 @@ io.on('connection', (socket) => {
       isHost: false 
     });
     
+    // Send update to all players in the room
     io.to(roomCode).emit('playersUpdate', {
       players: game.getPlayersInfo(),
       gameStarted: game.started
@@ -187,18 +192,18 @@ io.on('connection', (socket) => {
     const game = games.get(roomCode);
     
     if (!game) {
-      socket.emit('error', { message: 'Room not found' });
+      socket.emit('error', { message: 'Raum nicht gefunden' });
       return;
     }
     
     const player = game.players.get(socket.id);
     if (!player?.isHost) {
-      socket.emit('error', { message: 'Only the host can start the game' });
+      socket.emit('error', { message: 'Nur der Host kann das Spiel starten' });
       return;
     }
     
     if (!game.startGame()) {
-      socket.emit('error', { message: 'Need at least 3 players to start' });
+      socket.emit('error', { message: 'Mindestens 3 Spieler benötigt' });
       return;
     }
     
@@ -224,7 +229,7 @@ io.on('connection', (socket) => {
     
     const player = game.players.get(socket.id);
     if (!player?.isHost) {
-      socket.emit('error', { message: 'Only the host can end the game' });
+      socket.emit('error', { message: 'Nur der Host kann das Spiel beenden' });
       return;
     }
     
@@ -261,18 +266,29 @@ io.on('connection', (socket) => {
           
           if (game.started && socket.id === game.imposterId) {
             // End game if imposter leaves
-            const imposter = { name: 'Disconnected Player' };
+            const imposter = { name: 'Spieler getrennt' };
             io.to(roomCode).emit('gameEnded', {
               imposterId: game.imposterId,
               imposterName: imposter.name,
               word: game.currentWord,
-              reason: 'Imposter disconnected'
+              reason: 'Betrüger hat das Spiel verlassen'
             });
             game.resetGame();
           }
         }
       }
       playerSockets.delete(socket.id);
+    }
+  });
+
+  // Add getRoomState handler
+  socket.on('getRoomState', ({ roomCode }) => {
+    const game = games.get(roomCode);
+    if (game && game.players.has(socket.id)) {
+      socket.emit('playersUpdate', {
+        players: game.getPlayersInfo(),
+        gameStarted: game.started
+      });
     }
   });
 });

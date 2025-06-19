@@ -22,8 +22,12 @@ const GameRoom = () => {
       return;
     }
 
+    // Request current room state when joining
+    socket.emit('getRoomState', { roomCode });
+
     // Listen for game updates
     socket.on('playersUpdate', ({ players, gameStarted }) => {
+      console.log('Players update received:', players); // Debug log
       setPlayers(players);
       setGameStarted(gameStarted);
       const currentPlayer = players.find(p => p.id === socket.id);
@@ -60,7 +64,7 @@ const GameRoom = () => {
       socket.off('gameEnded');
       socket.off('error');
     };
-  }, [socket, connected, navigate]);
+  }, [socket, connected, navigate, roomCode]);
 
   const handleStartGame = () => {
     if (!socket) return;
@@ -78,25 +82,25 @@ const GameRoom = () => {
 
   const copyRoomCode = () => {
     navigator.clipboard.writeText(window.location.href);
-    alert('Room link copied to clipboard!');
+    alert('Raumlink in Zwischenablage kopiert!');
   };
 
   return (
     <div className="container game-room">
       <div className="room-header">
         <div className="room-code">
-          <h2>Room Code:</h2>
+          <h2>Raumcode:</h2>
           <span className="code">{roomCode}</span>
           <button 
             className="btn btn-secondary" 
             onClick={copyRoomCode}
             style={{ width: 'auto', marginLeft: '10px' }}
           >
-            Copy Link
+            Link kopieren
           </button>
         </div>
         <button className="btn btn-danger" onClick={handleLeaveRoom}>
-          Leave Room
+          Raum verlassen
         </button>
       </div>
 
@@ -104,12 +108,12 @@ const GameRoom = () => {
 
       {gameEnded && imposterInfo && (
         <div className="game-ended">
-          <h3>Game Over!</h3>
+          <h3>Spiel beendet!</h3>
           <p className="reveal">
-            The imposter was: <span className="imposter-name">{imposterInfo.name}</span>
+            Der Betrüger war: <span className="imposter-name">{imposterInfo.name}</span>
           </p>
           <p className="reveal">
-            The word was: <span className="word-reveal">{imposterInfo.word}</span>
+            Das Wort war: <span className="word-reveal">{imposterInfo.word}</span>
           </p>
         </div>
       )}
@@ -117,13 +121,13 @@ const GameRoom = () => {
       {gameStarted && !gameEnded && (
         <div className={`game-status ${isImposter ? 'imposter' : ''}`}>
           <h3>
-            {isImposter ? "You are the IMPOSTER!" : "You are a REGULAR player"}
+            {isImposter ? "Du bist der BETRÜGER!" : "Du bist ein NORMALER Spieler"}
           </h3>
           {isImposter ? (
-            <p>Try to blend in without knowing the word!</p>
+            <p>Versuche dich einzufügen, ohne das Wort zu kennen!</p>
           ) : (
             <>
-              <p>The word is:</p>
+              <p>Das Wort ist:</p>
               <div className="word">{word}</div>
             </>
           )}
@@ -131,7 +135,7 @@ const GameRoom = () => {
       )}
 
       <div className="players-section">
-        <h3>Players ({players.length})</h3>
+        <h3>Spieler ({players.length})</h3>
         <div className="players-grid">
           {players.map((player) => (
             <div 
@@ -140,7 +144,7 @@ const GameRoom = () => {
             >
               <div className="player-name">{player.name}</div>
               <div className="player-role">
-                {player.isHost ? 'Host' : 'Player'}
+                {player.isHost ? 'Host' : 'Spieler'}
               </div>
             </div>
           ))}
@@ -151,19 +155,19 @@ const GameRoom = () => {
         <>
           {players.length < 3 && (
             <p className="waiting-message">
-              Waiting for more players... (Need at least 3 players to start)
+              Warte auf weitere Spieler... (Mindestens 3 Spieler benötigt)
             </p>
           )}
           {isHost && players.length >= 3 && (
             <div className="game-controls">
               <button className="btn" onClick={handleStartGame}>
-                Start Game
+                Spiel starten
               </button>
             </div>
           )}
           {!isHost && players.length >= 3 && (
             <p className="waiting-message">
-              Waiting for the host to start the game...
+              Warte darauf, dass der Host das Spiel startet...
             </p>
           )}
         </>
@@ -172,7 +176,7 @@ const GameRoom = () => {
       {gameStarted && !gameEnded && isHost && (
         <div className="game-controls">
           <button className="btn btn-danger" onClick={handleEndGame}>
-            End Game & Reveal Imposter
+            Spiel beenden & Betrüger aufdecken
           </button>
         </div>
       )}

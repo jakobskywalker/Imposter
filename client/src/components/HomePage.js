@@ -11,12 +11,12 @@ const HomePage = () => {
 
   const handleCreateRoom = () => {
     if (!playerName.trim()) {
-      setError('Please enter your name');
+      setError('Bitte gib deinen Namen ein');
       return;
     }
 
     if (!connected || !socket) {
-      setError('Connection error. Please refresh the page.');
+      setError('Verbindungsfehler. Bitte lade die Seite neu.');
       return;
     }
 
@@ -33,17 +33,17 @@ const HomePage = () => {
 
   const handleJoinRoom = () => {
     if (!playerName.trim()) {
-      setError('Please enter your name');
+      setError('Bitte gib deinen Namen ein');
       return;
     }
 
     if (!roomCode.trim()) {
-      setError('Please enter a room code');
+      setError('Bitte gib einen Raumcode ein');
       return;
     }
 
     if (!connected || !socket) {
-      setError('Connection error. Please refresh the page.');
+      setError('Verbindungsfehler. Bitte lade die Seite neu.');
       return;
     }
 
@@ -63,19 +63,19 @@ const HomePage = () => {
 
   return (
     <div className="container">
-      <h1 className="title">Imposter Game</h1>
-      <p className="subtitle">One imposter, one word, endless fun!</p>
+      <h1 className="title">Betrüger Spiel</h1>
+      <p className="subtitle">Ein Betrüger, ein Wort, endloser Spaß!</p>
       
       {error && <div className="error-message">{error}</div>}
       
       <div className="input-group">
-        <label htmlFor="playerName">Your Name</label>
+        <label htmlFor="playerName">Dein Name</label>
         <input
           id="playerName"
           type="text"
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
-          placeholder="Enter your name"
+          placeholder="Gib deinen Namen ein"
           maxLength={20}
         />
       </div>
@@ -85,21 +85,21 @@ const HomePage = () => {
         onClick={handleCreateRoom}
         disabled={!connected}
       >
-        Create New Room
+        Neuen Raum erstellen
       </button>
 
       <div className="divider">
-        <span>OR</span>
+        <span>ODER</span>
       </div>
 
       <div className="input-group">
-        <label htmlFor="roomCode">Room Code</label>
+        <label htmlFor="roomCode">Raumcode</label>
         <input
           id="roomCode"
           type="text"
           value={roomCode}
           onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-          placeholder="Enter 6-letter code"
+          placeholder="6-stelligen Code eingeben"
           maxLength={6}
         />
       </div>
@@ -109,12 +109,25 @@ const HomePage = () => {
         onClick={handleJoinRoom}
         disabled={!connected}
       >
-        Join Room
+        Raum beitreten
       </button>
 
       {!connected && (
-        <p className="waiting-message">Connecting to server...</p>
+        <p className="waiting-message">Verbinde mit Server...</p>
       )}
+      
+      {/* Easter egg */}
+      <div style={{ 
+        position: 'absolute', 
+        bottom: '10px', 
+        right: '10px', 
+        fontSize: '0.7rem', 
+        color: 'rgba(255,255,255,0.3)',
+        fontStyle: 'italic',
+        userSelect: 'none'
+      }}>
+        für die discord nibbers
+      </div>
     </div>
   );
 };
