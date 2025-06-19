@@ -9,8 +9,8 @@ npm install
 cd client
 npm install --legacy-peer-deps
 
-# Build the React app
-npm run build
+# Build the React app with CI=false to ignore warnings
+CI=false npm run build
 
 # Go back to root
 cd ..

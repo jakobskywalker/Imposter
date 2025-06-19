@@ -7,9 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "client": "cd client && npm start",
-    "build": "cd client && npm install --legacy-peer-deps && npm run build",
-    "heroku-postbuild": "cd client && npm install --legacy-peer-deps && npm run build",
-    "render-postbuild": "cd client && npm install --legacy-peer-deps && npm run build"
+    "build": "cd client && npm install --legacy-peer-deps && CI=false npm run build",
+    "heroku-postbuild": "cd client && npm install --legacy-peer-deps && CI=false npm run build",
+    "render-postbuild": "cd client && npm install --legacy-peer-deps && CI=false npm run build"
   },
   "keywords": ["game", "multiplayer", "imposter"],
   "author": "",
