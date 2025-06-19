@@ -63,7 +63,7 @@ const HomePage = () => {
 
   return (
     <div className="container">
-      <h1 className="title">Betrüger Spiel</h1>
+      <h1 className="title">Imposter Game für Nibbers</h1>
       <p className="subtitle">Ein Betrüger, ein Wort, endloser Spaß!</p>
       
       {error && <div className="error-message">{error}</div>}
