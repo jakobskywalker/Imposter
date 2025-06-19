@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
+import CategorySelector from './CategorySelector';
+import PlayerOrder from './PlayerOrder';
 
 const GameRoom = () => {
   const { roomCode } = useParams();
@@ -15,6 +17,10 @@ const GameRoom = () => {
   const [gameEnded, setGameEnded] = useState(false);
   const [imposterInfo, setImposterInfo] = useState(null);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState({});
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [playerOrder, setPlayerOrder] = useState([]);
+  const [currentTurnPlayerId, setCurrentTurnPlayerId] = useState(null);
 
   useEffect(() => {
     if (!connected || !socket) {
@@ -24,6 +30,7 @@ const GameRoom = () => {
 
     // Request current room state when joining
     socket.emit('getRoomState', { roomCode });
+    socket.emit('getCategories', { roomCode });
 
     // Listen for game updates
     socket.on('playersUpdate', ({ players, gameStarted }) => {
@@ -36,19 +43,37 @@ const GameRoom = () => {
       }
     });
 
-    socket.on('gameStarted', ({ isImposter, word, players }) => {
+    socket.on('categoriesUpdated', ({ categories, availableCategories }) => {
+      setSelectedCategories(categories);
+      setCategories(availableCategories);
+    });
+
+    socket.on('gameStarted', ({ isImposter, word, players, playerOrder, currentTurnPlayerId }) => {
       setGameStarted(true);
       setIsImposter(isImposter);
       setWord(word);
       setPlayers(players);
+      setPlayerOrder(playerOrder);
+      setCurrentTurnPlayerId(currentTurnPlayerId);
       setGameEnded(false);
       setImposterInfo(null);
+    });
+
+    socket.on('turnUpdate', ({ currentTurnPlayerId, currentPlayerIndex }) => {
+      setCurrentTurnPlayerId(currentTurnPlayerId);
+    });
+
+    socket.on('roundStarted', ({ playerOrder, currentTurnPlayerId }) => {
+      setPlayerOrder(playerOrder);
+      setCurrentTurnPlayerId(currentTurnPlayerId);
     });
 
     socket.on('gameEnded', ({ imposterId, imposterName, word, reason }) => {
       setGameEnded(true);
       setImposterInfo({ id: imposterId, name: imposterName, word });
       setGameStarted(false);
+      setPlayerOrder([]);
+      setCurrentTurnPlayerId(null);
       if (reason) {
         setError(reason);
       }
@@ -63,17 +88,40 @@ const GameRoom = () => {
       socket.off('gameStarted');
       socket.off('gameEnded');
       socket.off('error');
+      socket.off('categoriesUpdated');
+      socket.off('turnUpdate');
+      socket.off('roundStarted');
     };
   }, [socket, connected, navigate, roomCode]);
 
+  const handleCategoryToggle = (categoryId) => {
+    if (!socket || !isHost) return;
+    
+    const newCategories = selectedCategories.includes(categoryId)
+      ? selectedCategories.filter(id => id !== categoryId)
+      : [...selectedCategories, categoryId];
+    
+    socket.emit('updateCategories', { roomCode, categories: newCategories });
+  };
+
   const handleStartGame = () => {
-    if (!socket) return;
+    if (!socket || selectedCategories.length === 0) return;
     socket.emit('startGame', { roomCode });
   };
 
   const handleEndGame = () => {
     if (!socket) return;
     socket.emit('endGame', { roomCode });
+  };
+
+  const handleNextTurn = () => {
+    if (!socket || !isHost) return;
+    socket.emit('nextTurn', { roomCode });
+  };
+
+  const handleNewRound = () => {
+    if (!socket || !isHost) return;
+    socket.emit('newRound', { roomCode });
   };
 
   const handleLeaveRoom = () => {
@@ -119,19 +167,30 @@ const GameRoom = () => {
       )}
 
       {gameStarted && !gameEnded && (
-        <div className={`game-status ${isImposter ? 'imposter' : ''}`}>
-          <h3>
-            {isImposter ? "Du bist der BETRÜGER!" : "Du bist ein NORMALER Spieler"}
-          </h3>
-          {isImposter ? (
-            <p>Versuche dich einzufügen, ohne das Wort zu kennen!</p>
-          ) : (
-            <>
-              <p>Das Wort ist:</p>
-              <div className="word">{word}</div>
-            </>
-          )}
-        </div>
+        <>
+          <div className={`game-status ${isImposter ? 'imposter' : ''}`}>
+            <h3>
+              {isImposter ? "Du bist der BETRÜGER!" : "Du bist ein NORMALER Spieler"}
+            </h3>
+            {isImposter ? (
+              <p>Versuche dich einzufügen, ohne das Wort zu kennen!</p>
+            ) : (
+              <>
+                <p>Das Wort ist:</p>
+                <div className="word">{word}</div>
+              </>
+            )}
+          </div>
+
+          <PlayerOrder
+            players={players}
+            playerOrder={playerOrder}
+            currentTurnPlayerId={currentTurnPlayerId}
+            isHost={isHost}
+            onNextTurn={handleNextTurn}
+            onNewRound={handleNewRound}
+          />
+        </>
       )}
 
       <div className="players-section">
@@ -151,6 +210,15 @@ const GameRoom = () => {
         </div>
       </div>
 
+      {!gameStarted && Object.keys(categories).length > 0 && (
+        <CategorySelector
+          categories={categories}
+          selectedCategories={selectedCategories}
+          onCategoryToggle={handleCategoryToggle}
+          isHost={isHost}
+        />
+      )}
+
       {!gameStarted && (
         <>
           {players.length < 3 && (
@@ -160,7 +228,11 @@ const GameRoom = () => {
           )}
           {isHost && players.length >= 3 && (
             <div className="game-controls">
-              <button className="btn" onClick={handleStartGame}>
+              <button 
+                className="btn" 
+                onClick={handleStartGame}
+                disabled={selectedCategories.length === 0}
+              >
                 Spiel starten
               </button>
             </div>

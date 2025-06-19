@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 
 const HomePage = () => {
   const [playerName, setPlayerName] = useState('');
@@ -8,19 +10,23 @@ const HomePage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { socket, connected } = useSocket();
+  const { t, language } = useLanguage();
 
   const handleCreateRoom = () => {
     if (!playerName.trim()) {
-      setError('Bitte gib deinen Namen ein');
+      setError(t('errorEnterName'));
       return;
     }
 
     if (!connected || !socket) {
-      setError('Verbindungsfehler. Bitte lade die Seite neu.');
+      setError(t('errorConnection'));
       return;
     }
 
-    socket.emit('createRoom', { playerName: playerName.trim() });
+    socket.emit('createRoom', { 
+      playerName: playerName.trim(),
+      language: language 
+    });
     
     socket.once('roomCreated', ({ roomCode }) => {
       navigate(`/room/${roomCode}`);
@@ -33,23 +39,24 @@ const HomePage = () => {
 
   const handleJoinRoom = () => {
     if (!playerName.trim()) {
-      setError('Bitte gib deinen Namen ein');
+      setError(t('errorEnterName'));
       return;
     }
 
     if (!roomCode.trim()) {
-      setError('Bitte gib einen Raumcode ein');
+      setError(t('errorEnterCode'));
       return;
     }
 
     if (!connected || !socket) {
-      setError('Verbindungsfehler. Bitte lade die Seite neu.');
+      setError(t('errorConnection'));
       return;
     }
 
     socket.emit('joinRoom', { 
       roomCode: roomCode.trim().toUpperCase(), 
-      playerName: playerName.trim() 
+      playerName: playerName.trim(),
+      language: language 
     });
     
     socket.once('roomJoined', ({ roomCode }) => {
@@ -63,19 +70,20 @@ const HomePage = () => {
 
   return (
     <div className="container">
-      <h1 className="title">Imposter Game für Nibbers</h1>
-      <p className="subtitle">Ein Betrüger, ein Wort, endloser Spaß!</p>
+      <LanguageSelector />
+      <h1 className="title">{t('gameTitle')}</h1>
+      <p className="subtitle">{t('gameSubtitle')}</p>
       
       {error && <div className="error-message">{error}</div>}
       
       <div className="input-group">
-        <label htmlFor="playerName">Dein Name</label>
+        <label htmlFor="playerName">{t('yourName')}</label>
         <input
           id="playerName"
           type="text"
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
-          placeholder="Gib deinen Namen ein"
+          placeholder={t('enterName')}
           maxLength={20}
         />
       </div>
@@ -85,21 +93,21 @@ const HomePage = () => {
         onClick={handleCreateRoom}
         disabled={!connected}
       >
-        Neuen Raum erstellen
+        {t('createRoom')}
       </button>
 
       <div className="divider">
-        <span>ODER</span>
+        <span>{t('or')}</span>
       </div>
 
       <div className="input-group">
-        <label htmlFor="roomCode">Raumcode</label>
+        <label htmlFor="roomCode">{t('roomCode')}</label>
         <input
           id="roomCode"
           type="text"
           value={roomCode}
           onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-          placeholder="6-stelligen Code eingeben"
+          placeholder={t('enterRoomCode')}
           maxLength={6}
         />
       </div>
@@ -109,11 +117,11 @@ const HomePage = () => {
         onClick={handleJoinRoom}
         disabled={!connected}
       >
-        Raum beitreten
+        {t('joinRoom')}
       </button>
 
       {!connected && (
-        <p className="waiting-message">Verbinde mit Server...</p>
+        <p className="waiting-message">{t('connecting')}</p>
       )}
       
       {/* Easter egg */}
