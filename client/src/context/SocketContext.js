@@ -17,7 +17,12 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // Connect to the backend server
-    const newSocket = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:3001');
+    // In production, connect to the same origin. In development, connect to localhost:3001
+    const socketUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin 
+      : 'http://localhost:3001';
+    
+    const newSocket = io(socketUrl);
 
     newSocket.on('connect', () => {
       console.log('Connected to server');
