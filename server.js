@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,13 +19,29 @@ app.use(express.json());
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the React app
-  app.use(express.static(path.join(__dirname, 'client/build')));
+  const clientBuildPath = path.join(__dirname, 'client/build');
   
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  });
+  // Debug logging
+  console.log('Production mode detected');
+  console.log('Looking for client build at:', clientBuildPath);
+  console.log('Directory exists:', fs.existsSync(clientBuildPath));
+  
+  if (fs.existsSync(clientBuildPath)) {
+    // Serve static files from the React app
+    app.use(express.static(clientBuildPath));
+    
+    // Handle React routing, return all requests to React app
+    app.get('*', (req, res) => {
+      const indexPath = path.join(clientBuildPath, 'index.html');
+      console.log('Serving index.html from:', indexPath);
+      res.sendFile(indexPath);
+    });
+  } else {
+    console.error('Client build directory not found!');
+    app.get('*', (req, res) => {
+      res.status(404).send('Client build not found. Please run: cd client && npm run build');
+    });
+  }
 }
 
 // Game state
